@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:taskmanager}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:taskmanager}
+    password: ${DB_PASSWORD:changeme}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.devsecopsdemo.taskmanager: INFO
