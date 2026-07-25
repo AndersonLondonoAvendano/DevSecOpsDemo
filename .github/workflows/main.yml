@@ -14,8 +14,11 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
-  sca: 
-    needs: build 
-    name: SCA 
+  sca:
+    needs: build
+    name: SCA
     uses: ./.github/workflows/sca.yml
+    permissions:
+      contents: read
+      security-events: write
     secrets: inherit
