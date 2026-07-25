@@ -1,0 +1,45 @@
+name: 30 - License Compliance pipeline
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  license-compliance:
+    name: License scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Resolve dependencies (populate local Maven repo)
+        run: mvn --batch-mode --no-transfer-progress dependency:go-offline
+
+      - name: Run Trivy license scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: license
+          severity: CRITICAL,HIGH,MEDIUM
+          format: table
+          output: trivy-license-report.txt
+          exit-code: "0"
+
+      - name: Upload license report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-license-report
+          path: trivy-license-report.txt
+          retention-days: 7
