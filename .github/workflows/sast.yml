@@ -11,6 +11,9 @@ jobs:
   semgrep:
     name: Static analysis (Semgrep)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     container:
       image: semgrep/semgrep:1.171.0
     steps:
@@ -20,6 +23,13 @@ jobs:
       - name: Run Semgrep
         continue-on-error: true
         run: semgrep scan --config p/ci --sarif -o semgrep-results.sarif
+
+      - name: Upload Semgrep results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
 
       - name: Upload Semgrep report as artifact
         if: always()
@@ -32,6 +42,9 @@ jobs:
   codeql:
     name: Static analysis (CodeQL)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,7 +68,8 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
-          upload: never
+          category: codeql
+          upload: always
           upload-database: false
           output: codeql-results
 
@@ -70,6 +84,9 @@ jobs:
   spotbugs:
     name: Static analysis (SpotBugs + Find Security Bugs)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     env:
       SPOTBUGS_VERSION: "4.10.3"
       FINDSECBUGS_VERSION: "1.14.0"
@@ -102,6 +119,13 @@ jobs:
             -auxclasspath "$(cat classpath.txt)" \
             -sarif=spotbugs-results.sarif \
             target/classes
+
+      - name: Upload SpotBugs results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: spotbugs-results.sarif
+          category: spotbugs
 
       - name: Upload SpotBugs report as artifact
         if: always()
