@@ -19,7 +19,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -40,6 +43,14 @@ public class TaskController {
     @Operation(summary = "Get task by id")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
+    }
+
+    // INTENTIONAL VULNERABILITY - see TaskService.searchTasksByTitle. Remove once the
+    // SAST pipeline findings have been verified.
+    @GetMapping("/search")
+    @Operation(summary = "Search tasks by title")
+    public ResponseEntity<List<TaskResponse>> searchTasksByTitle(@RequestParam String title) {
+        return ResponseEntity.ok(taskService.searchTasksByTitle(title));
     }
 
     @PostMapping

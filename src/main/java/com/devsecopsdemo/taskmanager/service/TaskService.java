@@ -6,11 +6,14 @@ import com.devsecopsdemo.taskmanager.dto.TaskResponse;
 import com.devsecopsdemo.taskmanager.exception.TaskNotFoundException;
 import com.devsecopsdemo.taskmanager.model.Task;
 import com.devsecopsdemo.taskmanager.repository.TaskRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final EntityManager entityManager;
 
     public PagedResponse<TaskResponse> getAllTasks(Pageable pageable) {
         Page<TaskResponse> page = taskRepository.findAll(pageable)
@@ -42,6 +46,16 @@ public class TaskService {
         taskMapper.updateEntity(task, request);
         Task updated = taskRepository.save(task);
         return taskMapper.toResponse(updated);
+    }
+
+    // INTENTIONAL VULNERABILITY (SQL injection via string-concatenated native query) -
+    // added only to validate that the SAST pipeline (Semgrep/CodeQL/SpotBugs+FindSecBugs)
+    // actually detects real findings. Remove once verified.
+    @SuppressWarnings("unchecked")
+    public List<TaskResponse> searchTasksByTitle(String title) {
+        String sql = "SELECT * FROM tasks WHERE title LIKE '%" + title + "%'";
+        List<Task> tasks = entityManager.createNativeQuery(sql, Task.class).getResultList();
+        return tasks.stream().map(taskMapper::toResponse).toList();
     }
 
     public void deleteTask(Long id) {
