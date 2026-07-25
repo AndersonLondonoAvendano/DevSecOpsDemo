@@ -31,3 +31,13 @@ jobs:
       contents: read
       security-events: write
     secrets: inherit
+
+  sast:
+    needs: build 
+    name: SAST 
+    uses: ./.github/workflows/sast.yml
+    permissions:
+      contents: read
+      security-events: write
+    secrets: inherit
+
