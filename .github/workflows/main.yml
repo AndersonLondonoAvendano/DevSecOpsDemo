@@ -22,3 +22,12 @@ jobs:
       contents: read
       security-events: write
     secrets: inherit
+
+  license-compliance:
+    needs: build
+    name: License Compliance
+    uses: ./.github/workflows/license-compliance.yml
+    permissions:
+      contents: read
+      security-events: write
+    secrets: inherit
