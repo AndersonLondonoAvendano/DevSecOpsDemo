@@ -41,3 +41,24 @@ jobs:
       security-events: write
     secrets: inherit
 
+  docker:
+    needs: [build, sca, license-compliance, sast]
+    name: Docker Build & Push
+    uses: ./.github/workflows/docker.yml
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  container-image-scan:
+    needs: docker
+    name: Container Image Scan
+    uses: ./.github/workflows/container-image-scan.yml
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    secrets: inherit
+    with:
+      image-name: ${{ needs.docker.outputs.image-name }}
+      image-tag: ${{ needs.docker.outputs.image-tag }}
