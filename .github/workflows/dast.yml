@@ -73,6 +73,7 @@ jobs:
           docker run -d \
             --name app-under-test \
             -p ${APP_PORT}:${APP_PORT} \
+            -e SPRING_PROFILES_ACTIVE=dast \
             ${IMAGE_NAME}:${IMAGE_TAG}
 
       - name: Wait for application

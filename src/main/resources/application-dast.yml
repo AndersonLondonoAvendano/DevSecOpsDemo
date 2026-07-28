@@ -1,0 +1,24 @@
+# Self-contained profile for the ephemeral DAST scan target: same hardening
+# as prod (no H2 console, quiet health details, no SQL logging) but backed
+# by in-memory H2 instead of Postgres, so the scanned container doesn't
+# depend on any external database service.
+spring:
+  datasource:
+    url: jdbc:h2:mem:taskmanager-dast;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.devsecopsdemo.taskmanager: INFO
