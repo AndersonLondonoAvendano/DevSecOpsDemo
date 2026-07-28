@@ -64,7 +64,7 @@ jobs:
       image-tag: ${{ needs.docker.outputs.image-tag }}
 
   dast:
-    needs: container-image-scan
+    needs: [docker, container-image-scan]
     name: DAST Scan
     uses: ./.github/workflows/dast.yml
     permissions:
