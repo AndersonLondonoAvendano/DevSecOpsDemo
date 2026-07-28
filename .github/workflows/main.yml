@@ -62,3 +62,16 @@ jobs:
     with:
       image-name: ${{ needs.docker.outputs.image-name }}
       image-tag: ${{ needs.docker.outputs.image-tag }}
+
+  dast:
+    needs: container-image-scan
+    name: DAST Scan
+    uses: ./.github/workflows/dast.yml
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    secrets: inherit
+    with:
+      image-name: ${{ needs.docker.outputs.image-name }}
+      image-tag: ${{ needs.docker.outputs.image-tag }}

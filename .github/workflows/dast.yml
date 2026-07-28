@@ -1,0 +1,126 @@
+name: 70 - DAST Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-name:
+        description: Fully qualified image name (without tag)
+        type: string
+        required: true
+
+      image-tag:
+        description: Image tag to execute
+        type: string
+        required: true
+
+      app-port:
+        description: Application port
+        type: string
+        default: "8080"
+        required: false
+
+  workflow_call:
+    inputs:
+      image-name:
+        required: true
+        type: string
+
+      image-tag:
+        required: true
+        type: string
+
+      app-port:
+        required: false
+        default: "8080"
+        type: string
+
+env:
+  IMAGE_NAME: ${{ inputs.image-name }}
+  IMAGE_TAG: ${{ inputs.image-tag }}
+  APP_PORT: ${{ inputs.app-port }}
+
+jobs:
+  dast-scan:
+
+    name: DAST Scan (OWASP ZAP)
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker image
+        run: |
+          docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+
+      - name: Start application container
+        run: |
+          docker rm -f app-under-test || true
+
+          docker run -d \
+            --name app-under-test \
+            -p ${APP_PORT}:${APP_PORT} \
+            ${IMAGE_NAME}:${IMAGE_TAG}
+
+      - name: Wait for application
+        run: |
+
+          echo "Waiting for application..."
+
+          for i in {1..60}; do
+
+            if curl --silent --fail http://localhost:${APP_PORT} >/dev/null; then
+              echo "Application is ready."
+              exit 0
+            fi
+
+            sleep 5
+
+          done
+
+          echo "Application failed to start."
+
+          docker logs app-under-test
+
+          exit 1
+
+      - name: Verify application
+        run: |
+          curl -I http://localhost:${APP_PORT}
+
+      - name: Run OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: http://localhost:${APP_PORT}
+          allow_issue_writing: false
+          artifact_name: zap-report
+
+      - name: Upload HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-report
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker logs app-under-test || true
+          docker stop app-under-test || true
+          docker rm app-under-test || true
